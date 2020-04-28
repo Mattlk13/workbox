@@ -7,11 +7,14 @@
 */
 
 import {Deferred} from 'workbox-core/_private/Deferred.js';
+import {dontWaitFor} from 'workbox-core/_private/dontWaitFor.js';
 import {logger} from 'workbox-core/_private/logger.js';
+
 import {messageSW} from './messageSW.js';
 import {WorkboxEventTarget} from './utils/WorkboxEventTarget.js';
 import {urlsMatch} from './utils/urlsMatch.js';
 import {WorkboxEvent, WorkboxLifecycleEventMap} from './utils/WorkboxEvent.js';
+
 import './_version.js';
 
 
@@ -37,24 +40,24 @@ const REGISTRATION_TIMEOUT_DURATION = 60000;
  * @fires [externalinstalled]{@link module:workbox-window.Workbox#externalinstalled}
  * @fires [externalwaiting]{@link module:workbox-window.Workbox#externalwaiting}
  * @fires [externalactivated]{@link module:workbox-window.Workbox#externalactivated}
- *
  * @memberof module:workbox-window
  */
 class Workbox extends WorkboxEventTarget {
-  private _scriptURL: string;
-  private _registerOptions: RegistrationOptions = {};
-  private _updateFoundCount: number = 0;
+  private readonly _scriptURL: string;
+  private readonly _registerOptions: RegistrationOptions = {};
+  private _updateFoundCount = 0;
 
   // Deferreds we can resolve later.
-  private _swDeferred: Deferred<ServiceWorker> = new Deferred();
-  private _activeDeferred: Deferred<ServiceWorker> = new Deferred();
-  private _controllingDeferred: Deferred<ServiceWorker> = new Deferred();
+  private readonly _swDeferred: Deferred<ServiceWorker> = new Deferred();
+  private readonly _activeDeferred: Deferred<ServiceWorker> = new Deferred();
+  private readonly _controllingDeferred: Deferred<ServiceWorker> = new Deferred();
 
   private _registrationTime: DOMHighResTimeStamp = 0;
   private _isUpdate?: boolean;
   private _compatibleControllingSW?: ServiceWorker;
   private _registration?: ServiceWorkerRegistration;
   private _sw?: ServiceWorker;
+  private readonly _ownSWs: Set<ServiceWorker> = new Set();
   private _externalSW?: ServiceWorker;
   private _waitingTimeout?: number;
 
@@ -74,6 +77,11 @@ class Workbox extends WorkboxEventTarget {
 
     this._scriptURL = scriptURL;
     this._registerOptions = registerOptions;
+
+    // Add a message listener immediately since messages received during
+    // page load are buffered only until the DOMContentLoaded event:
+    // https://github.com/GoogleChrome/workbox/issues/2202
+    navigator.serviceWorker.addEventListener('message', this._onMessage);
   }
 
   /**
@@ -96,7 +104,7 @@ class Workbox extends WorkboxEventTarget {
     }
 
     if (!immediate && document.readyState !== 'complete') {
-      await new Promise((res) => addEventListener('load', res));
+      await new Promise((res) => window.addEventListener('load', res));
     }
 
     // Set this flag to true if any service worker was controlling the page
@@ -123,7 +131,7 @@ class Workbox extends WorkboxEventTarget {
 
     // If there's a waiting service worker with a matching URL before the
     // `updatefound` event fires, it likely means that this site is open
-    // in another tab, or the user refreshed the page (and thus the prevoius
+    // in another tab, or the user refreshed the page (and thus the previous
     // page wasn't fully unloaded before this page started loading).
     // https://developers.google.com/web/fundamentals/primers/service-workers/lifecycle#waiting
     const waitingSW = this._registration.waiting;
@@ -134,7 +142,7 @@ class Workbox extends WorkboxEventTarget {
 
       // Run this in the next microtask, so any code that adds an event
       // listener after awaiting `register()` will get this event.
-      Promise.resolve().then(() => {
+      dontWaitFor(Promise.resolve().then(() => {
         this.dispatchEvent(new WorkboxEvent('waiting', {
           sw: waitingSW,
           wasWaitingBeforeRegister: true,
@@ -143,12 +151,13 @@ class Workbox extends WorkboxEventTarget {
           logger.warn('A service worker was already waiting to activate ' +
               'before this script was registered...');
         }
-      });
+      }));
     }
 
     // If an "own" SW is already set, resolve the deferred.
     if (this._sw) {
       this._swDeferred.resolve(this._sw);
+      this._ownSWs.add(this._sw);
     }
 
     if (process.env.NODE_ENV !== 'production') {
@@ -180,9 +189,6 @@ class Workbox extends WorkboxEventTarget {
     this._registration.addEventListener('updatefound', this._onUpdateFound);
     navigator.serviceWorker.addEventListener(
         'controllerchange', this._onControllerChange, {once: true});
-
-    // Add a message listener.
-    navigator.serviceWorker.addEventListener('message', this._onMessage);
 
     return this._registration;
   }
@@ -316,10 +322,10 @@ class Workbox extends WorkboxEventTarget {
   /**
    * @private
    */
-  private _onUpdateFound = () => {
+  private readonly _onUpdateFound = () => {
     // `this._registration` will never be `undefined` after an update is found.
     const registration = this._registration!;
-    const installingSW = <ServiceWorker> registration.installing;
+    const installingSW = registration.installing as ServiceWorker;
 
     // If the script URL passed to `navigator.serviceWorker.register()` is
     // different from the current controlling SW's script URL, we know any
@@ -333,7 +339,7 @@ class Workbox extends WorkboxEventTarget {
     // script it registered or from a registration attempt made by a newer
     // version of the page running in another tab.
     // To minimize the possibility of a false positive, we use the logic here:
-    let updateLikelyTriggeredExternally =
+    const updateLikelyTriggeredExternally =
         // Since we enforce only calling `register()` once, and since we don't
         // add the `updatefound` event listener until the `register()` call, if
         // `_updateFoundCount` is > 0 then it means this method has already
@@ -359,6 +365,7 @@ class Workbox extends WorkboxEventTarget {
       // If the update was not triggered externally we know the installing
       // SW is the one we registered, so we set it.
       this._sw = installingSW;
+      this._ownSWs.add(installingSW);
       this._swDeferred.resolve(installingSW);
 
       // The `installing` state isn't something we have a dedicated
@@ -385,7 +392,7 @@ class Workbox extends WorkboxEventTarget {
    * @private
    * @param {Event} originalEvent
    */
-  private _onStateChange = (originalEvent: Event) => {
+  private readonly _onStateChange = (originalEvent: Event) => {
     // `this._registration` will never be `undefined` after an update is found.
     const registration = this._registration!;
     const sw = originalEvent.target as ServiceWorker;
@@ -393,7 +400,7 @@ class Workbox extends WorkboxEventTarget {
     const isExternal = sw === this._externalSW;
     const eventPrefix = isExternal ? 'external' : '';
 
-    const eventProps: {sw: ServiceWorker, originalEvent: Event, isUpdate?: boolean} = {
+    const eventProps: {sw: ServiceWorker; originalEvent: Event; isUpdate?: boolean} = {
       sw,
       originalEvent
     };
@@ -474,7 +481,7 @@ class Workbox extends WorkboxEventTarget {
    * @private
    * @param {Event} originalEvent
    */
-  private _onControllerChange = (originalEvent: Event) => {
+  private readonly _onControllerChange = (originalEvent: Event) => {
     const sw = this._sw;
     if (sw === navigator.serviceWorker.controller) {
       this.dispatchEvent(new WorkboxEvent('controlling', {
@@ -494,15 +501,30 @@ class Workbox extends WorkboxEventTarget {
    * @private
    * @param {Event} originalEvent
    */
-  private _onMessage = async (originalEvent: MessageEvent) => {
-    const {data} = originalEvent;
-    this.dispatchEvent(new WorkboxEvent('message', {
-      data,
-      sw: await this.getSW(),
-      originalEvent,
-    }));
+  private readonly _onMessage = async (originalEvent: MessageEvent) => {
+    const {data, source} = originalEvent;
+
+    // Wait until there's an "own" service worker. This is used to buffer
+    // `message` events that may be received prior to calling `register()`.
+    await this.getSW();
+
+    // If the service worker that sent the message is in the list of own
+    // service workers for this instance, dispatch a `message` event.
+    // NOTE: we check for all previously owned service workers rather than
+    // just the current one because some messages (e.g. cache updates) use
+    // a timeout when sent and may be delayed long enough for a service worker
+    // update to be found.
+    if (this._ownSWs.has(source as ServiceWorker)) {
+      this.dispatchEvent(new WorkboxEvent('message', {
+        data,
+        sw: source as ServiceWorker,
+        originalEvent,
+      }));
+    }
   }
 }
+
+export {Workbox};
 
 // The jsdoc comments below outline the events this instance may dispatch:
 // -----------------------------------------------------------------------
@@ -622,7 +644,7 @@ class Workbox extends WorkboxEventTarget {
 
 /**
  * The `externalinstalled` event is dispatched if the state of an
- * [external service worker]{@link https://developers.google.com/web/tools/workbox/modules/workbox-precaching#def-external-sw}
+ * [external service worker]{@link https://developers.google.com/web/tools/workbox/modules/workbox-window#when_an_unexpected_version_of_the_service_worker_is_found}
  * changes to `installed`.
  *
  * @event module:workbox-window.Workbox#externalinstalled
@@ -636,7 +658,7 @@ class Workbox extends WorkboxEventTarget {
 
 /**
  * The `externalwaiting` event is dispatched if the state of an
- * [external service worker]{@link https://developers.google.com/web/tools/workbox/modules/workbox-precaching#def-external-sw}
+ * [external service worker]{@link https://developers.google.com/web/tools/workbox/modules/workbox-window#when_an_unexpected_version_of_the_service_worker_is_found}
  * changes to `waiting`.
  *
  * @event module:workbox-window.Workbox#externalwaiting
@@ -650,7 +672,7 @@ class Workbox extends WorkboxEventTarget {
 
 /**
  * The `externalactivated` event is dispatched if the state of an
- * [external service worker]{@link https://developers.google.com/web/tools/workbox/modules/workbox-precaching#def-external-sw}
+ * [external service worker]{@link https://developers.google.com/web/tools/workbox/modules/workbox-window#when_an_unexpected_version_of_the_service_worker_is_found}
  * changes to `activated`.
  *
  * @event module:workbox-window.Workbox#externalactivated
@@ -661,5 +683,3 @@ class Workbox extends WorkboxEventTarget {
  * @property {string} type `externalactivated`.
  * @property {Workbox} target The `Workbox` instance.
  */
-
-export {Workbox};

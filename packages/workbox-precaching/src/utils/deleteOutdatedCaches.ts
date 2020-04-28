@@ -10,7 +10,7 @@ import '../_version.js';
 
 
 // Give TypeScript the correct global.
-declare var self: ServiceWorkerGlobalScope;
+declare let self: ServiceWorkerGlobalScope;
 
 const SUBSTRING_TO_FIND = '-precache-';
 
@@ -34,8 +34,8 @@ const SUBSTRING_TO_FIND = '-precache-';
  */
 const deleteOutdatedCaches = async (
     currentPrecacheName: string,
-    substringToFind:string = SUBSTRING_TO_FIND) => {
-  const cacheNames = await caches.keys();
+    substringToFind: string = SUBSTRING_TO_FIND) => {
+  const cacheNames = await self.caches.keys();
 
   const cacheNamesToDelete = cacheNames.filter((cacheName) => {
     return cacheName.includes(substringToFind) &&
@@ -44,7 +44,7 @@ const deleteOutdatedCaches = async (
   });
 
   await Promise.all(
-      cacheNamesToDelete.map((cacheName) => caches.delete(cacheName)));
+      cacheNamesToDelete.map((cacheName) => self.caches.delete(cacheName)));
 
   return cacheNamesToDelete;
 };

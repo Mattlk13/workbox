@@ -37,7 +37,7 @@ export interface RouteMatchCallback {
  * Options passed to a `RouteHandlerCallback` function.
  */
 export interface RouteHandlerCallbackOptions {
-  request: Request;
+  request: Request | string;
   url?: URL;
   event?: ExtendableEvent;
   params?: string[] | {[paramName: string]: string};
@@ -74,10 +74,10 @@ export type RouteHandler = RouteHandlerCallback | RouteHandlerObject;
 
 export interface CacheDidUpdateCallbackParam {
   cacheName: string;
-  oldResponse?: Response;
+  oldResponse?: Response | null;
   newResponse: Response;
   request: Request;
-  event?: FetchEvent;
+  event?: Event;
 }
 
 export interface CacheDidUpdateCallback {
@@ -132,7 +132,7 @@ export interface FetchDidSucceedCallbackParam {
 }
 
 export interface FetchDidSucceedCallback {
-  (param: FetchDidSucceedCallbackParam): Promise<Response>
+  (param: FetchDidSucceedCallbackParam): Promise<Response>;
 }
 
 export interface RequestWillFetchCallbackParam {
@@ -140,7 +140,7 @@ export interface RequestWillFetchCallbackParam {
 }
 
 export interface RequestWillFetchCallback {
-  (param: RequestWillFetchCallbackParam): Promise<Request | void | null | undefined>
+  (param: RequestWillFetchCallbackParam): Promise<Request | void | null | undefined>;
 }
 
 /**

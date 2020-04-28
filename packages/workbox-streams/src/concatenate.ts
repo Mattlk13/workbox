@@ -17,7 +17,7 @@ import './_version.js';
  * [BodyInit](https://fetch.spec.whatwg.org/#bodyinit) and returns the
  * ReadableStreamReader object associated with it.
  *
- * @param {workbox.streams.StreamSource} source
+ * @param {module:workbox-streams.StreamSource} source
  * @return {ReadableStreamReader}
  * @private
  */
@@ -39,14 +39,14 @@ function _getReaderFromSource(source: StreamSource): ReadableStreamReader {
  * data returned in sequence, along with a Promise which signals when the
  * stream is finished (useful for passing to a FetchEvent's waitUntil()).
  *
- * @param {Array<Promise<workbox.streams.StreamSource>>} sourcePromises
+ * @param {Array<Promise<module:workbox-streams.StreamSource>>} sourcePromises
  * @return {Object<{done: Promise, stream: ReadableStream}>}
  *
- * @memberof workbox.streams
+ * @memberof module:workbox-streams
  */
 function concatenate(sourcePromises: Promise<StreamSource>[]): {
-  done: Promise<void>,
-  stream: ReadableStream,
+  done: Promise<void>;
+  stream: ReadableStream;
 } {
   if (process.env.NODE_ENV !== 'production') {
     assert!.isArray(sourcePromises, {
@@ -62,12 +62,12 @@ function concatenate(sourcePromises: Promise<StreamSource>[]): {
     });
   });
 
-  const streamDeferred:Deferred<void> = new Deferred();
+  const streamDeferred: Deferred<void> = new Deferred();
 
   let i = 0;
   const logMessages: any[] = [];
   const stream = new ReadableStream({
-    pull(controller) {
+    pull(controller: ReadableStreamDefaultController<any>) {
       return readerPromises[i]
           .then((reader) => reader.read())
           .then((result) => {

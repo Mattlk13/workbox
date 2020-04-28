@@ -14,8 +14,8 @@ module.exports = {
   GENERATED_RELEASE_FILES_DIRNAME: 'generated-release-files',
 
   // This is used in the publish-bundle step to avoid doing anything
-  // with tags < v3.0.0.
-  MIN_RELEASE_TAG_TO_PUBLISH: 'v3.0.0',
+  // with tags < v4.0.0.
+  MIN_RELEASE_TAG_TO_PUBLISH: 'v5.1.1',
   GITHUB_OWNER: 'GoogleChrome',
   GITHUB_REPO: 'workbox',
 
@@ -24,7 +24,4 @@ module.exports = {
     dev: 'dev',
     prod: 'production',
   },
-
-  // This is used in demos directory when referencing local files
-  LOCAL_BUILDS_DIR: 'local-builds',
 };

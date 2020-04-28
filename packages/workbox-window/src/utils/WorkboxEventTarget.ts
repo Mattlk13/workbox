@@ -18,7 +18,7 @@ export type ListenerCallback = (event: WorkboxEvent<any>) => any;
  * @private
  */
 export class WorkboxEventTarget {
-  private _eventListenerRegistry: Map<keyof WorkboxEventMap, Set<ListenerCallback>> = new Map();
+  private readonly _eventListenerRegistry: Map<keyof WorkboxEventMap, Set<ListenerCallback>> = new Map();
 
   /**
    * @param {string} type
@@ -27,7 +27,7 @@ export class WorkboxEventTarget {
    */
   addEventListener<K extends keyof WorkboxEventMap>(type: K, listener: (event: WorkboxEventMap[K]) => any) {
     const foo = this._getEventListenersByType(type)
-    foo.add(listener);
+    foo.add(listener as ListenerCallback);
   }
 
   /**
@@ -36,7 +36,7 @@ export class WorkboxEventTarget {
    * @private
    */
   removeEventListener<K extends keyof WorkboxEventMap>(type: K, listener: (event: WorkboxEventMap[K]) => any) {
-    this._getEventListenersByType(type).delete(listener);
+    this._getEventListenersByType(type).delete(listener as ListenerCallback);
   }
 
   /**

@@ -58,9 +58,9 @@ const activateListener = (event: ExtendableEvent) => {
  *
  * @param {Array<Object|string>} [entries=[]] Array of entries to precache.
  *
- * @alias workbox.precaching.precache
+ * @memberof module:workbox-precaching
  */
-export const precache = (entries: Array<PrecacheEntry|string>) => {
+function precache(entries: Array<PrecacheEntry|string>) {
   const precacheController = getOrCreatePrecacheController();
   precacheController.addToCacheList(entries);
 
@@ -68,7 +68,10 @@ export const precache = (entries: Array<PrecacheEntry|string>) => {
     // NOTE: these listeners will only be added once (even if the `precache()`
     // method is called multiple times) because event listeners are implemented
     // as a set, where each listener must be unique.
-    addEventListener('install', installListener);
-    addEventListener('activate', activateListener);
+    // See https://github.com/Microsoft/TypeScript/issues/28357#issuecomment-436484705
+    self.addEventListener('install', installListener as EventListener);
+    self.addEventListener('activate', activateListener as EventListener);
   }
-};
+}
+
+export {precache}

@@ -19,8 +19,8 @@ gulp.task('lerna-bootstrap', () => {
 
   // If it's not a star, we can scope the build to a specific project.
   return lernaWrapper.bootstrap(
-      '--include-filtered-dependencies',
-      '--scope', global.packageOrStar
+      '--include-dependencies',
+      '--scope', global.packageOrStar,
   );
 });
 
@@ -29,20 +29,21 @@ gulp.task('lerna-bootstrap', () => {
 // Make sure this runs **before** lerna-bootstrap.
 gulp.task('build:update-cdn-details', async function() {
   const cdnDetails = await fs.readJSON(path.join(
-      __dirname, '..', 'cdn-details.json'
+      __dirname, '..', 'cdn-details.json',
   ));
-
-  const lernaPkg = await fs.readJSON(path.join(
-      __dirname, '..', 'lerna.json'
-  ));
-
-  cdnDetails.latestVersion = lernaPkg.version;
 
   const workboxBuildPath = path.join(
-      __dirname, '..', 'packages', 'workbox-build', 'src', 'cdn-details.json'
-  );
+      __dirname, '..', 'packages', 'workbox-build');
 
-  await fs.writeJson(workboxBuildPath, cdnDetails, {
+  const workboxBuildCdnDetailsPath = path.join(
+      workboxBuildPath, 'src', 'cdn-details.json');
+
+  const workboxBuildPkg = await fs.readJSON(path.join(
+      workboxBuildPath, 'package.json'));
+
+  cdnDetails.latestVersion = workboxBuildPkg.version;
+
+  await fs.writeJson(workboxBuildCdnDetailsPath, cdnDetails, {
     spaces: 2,
   });
 });

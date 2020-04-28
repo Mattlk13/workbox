@@ -60,6 +60,30 @@ describe(`NetworkFirst`, function() {
       await compareResponses(cachedResponse, handleResponse, true);
     });
 
+    it(`should support using a string as the request`, async function() {
+      const stringRequest = 'http://example.io/test/';
+      const request = new Request(stringRequest);
+      const event = new FetchEvent('fetch', {request});
+      spyOnEvent(event);
+
+      const fetchResponse = generateOpaqueResponse();
+      sandbox.stub(self, 'fetch').resolves(fetchResponse);
+
+      const networkFirst = new NetworkFirst();
+      const handleResponse = await networkFirst.handle({
+        request: stringRequest,
+        event,
+      });
+
+      // Wait until cache.put is finished.
+      await eventDoneWaiting(event);
+
+      const cache = await caches.open(cacheNames.getRuntimeName());
+      const cachedResponse = await cache.match(request);
+
+      await compareResponses(cachedResponse, handleResponse, true);
+    });
+
     it(`should return the cached response if exists and not update the cache when the network request fails`, async function() {
       sandbox.stub(self, 'fetch').rejects(new Error('Injected error.'));
 
@@ -72,7 +96,7 @@ describe(`NetworkFirst`, function() {
             request,
             event,
           }),
-          'no-response'
+          'no-response',
       );
 
       const injectedResponse = new Response('response body');
@@ -146,7 +170,7 @@ describe(`NetworkFirst`, function() {
       });
 
       const networkFirst = new NetworkFirst({networkTimeoutSeconds});
-      let handlePromise = networkFirst.handle({
+      const handlePromise = networkFirst.handle({
         request,
         event,
       });
@@ -276,7 +300,7 @@ describe(`NetworkFirst`, function() {
 
     it(`should use the CacheQueryOptions when performing a cache match`, async function() {
       const matchStub = sandbox.stub(Cache.prototype, 'match').resolves(generateUniqueResponse());
-      sandbox.stub(self, 'fetch').callsFake(() => Promise.reject());
+      sandbox.stub(self, 'fetch').callsFake(() => Promise.reject(new Error()));
 
       const matchOptions = {ignoreSearch: true};
       const networkFirst = new NetworkFirst({matchOptions});

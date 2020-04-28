@@ -10,16 +10,19 @@ import './_version.js';
 
 
 // Give TypeScript the correct global.
-declare var self: ServiceWorkerGlobalScope;
+declare let self: ServiceWorkerGlobalScope;
 
 /**
- * Force a service worker to become active, instead of waiting. This is
- * normally used in conjunction with `clientsClaim()`.
+ * Force a service worker to activate immediately, instead of
+ * [waiting](https://developers.google.com/web/fundamentals/primers/service-workers/lifecycle#waiting)
+ * for existing clients to close.
  *
- * @alias workbox.core.skipWaiting
+ * @memberof module:workbox-core
  */
-export const skipWaiting = () => {
+function skipWaiting() {
   // We need to explicitly call `self.skipWaiting()` here because we're
   // shadowing `skipWaiting` with this local function.
-  addEventListener('install', () => self.skipWaiting());
-};
+  self.addEventListener('install', () => self.skipWaiting());
+}
+
+export {skipWaiting}

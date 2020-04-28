@@ -90,8 +90,9 @@ module.exports = {
   'invalid-generate-file-manifest-arg': ol`The input to generateFileManifest()
     must be an Object.`,
   'invalid-sw-src': `The 'swSrc' file can't be read.`,
-  'same-src-and-dest': ol`'swSrc' and 'swDest' should not be set to the same ` +
-    `file. Please use a different file path for 'swDest'.`,
+  'same-src-and-dest': ol`Unable to find a place to inject the manifest. This is
+    likely because swSrc and swDest are configured to the same file.
+    Please ensure that your swSrc file contains the following:`,
   'only-regexp-routes-supported': ol`Please use a regular expression object as
     the urlPattern parameter. (Express-style routes are not currently
     supported.)`,
@@ -104,14 +105,13 @@ module.exports = {
   'bad-manifest-transforms-return-value': ol`The return value from a
     manifestTransform should be an object with 'manifest' and optionally
     'warnings' properties.`,
-  'string-entry-warning': ol`Some URLs were passed to additionalManifestEntries
-    as strings. Please ensure that these URLs contain versioning info
-    (e.g. 'https://example.com/v1.0/index.js'), as Workbox cannot maintain
-    its own revision info for them. To disable this warning, pass in an
-    object with a 'url' property, and a 'revision' property set to null
-    (e.g. {url: 'https://example.com/v1.0/index.js', revision: null}).`,
+  'string-entry-warning': ol`Some items were passed to additionalManifestEntries
+    without revisioning info. This is generally NOT safe. Learn more at
+    https://bit.ly/wb-precache.`,
   'no-manifest-entries-or-runtime-caching': ol`Couldn't find configuration for
     either precaching or runtime caching. Please ensure that the various glob
     options are set to match one or more files, and/or configure the
     runtimeCaching option.`,
+  'cant-find-sourcemap': ol`The swSrc file refers to a sourcemap that can't be
+    opened:`,
 };

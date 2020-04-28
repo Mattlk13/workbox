@@ -19,14 +19,15 @@ module.exports = async ({
   cleanupOutdatedCaches,
   clientsClaim,
   directoryIndex,
+  disableDevLogs,
   ignoreURLParametersMatching,
   importScripts,
   inlineWorkboxRuntime,
   manifestEntries,
   mode,
   navigateFallback,
-  navigateFallbackBlacklist,
-  navigateFallbackWhitelist,
+  navigateFallbackDenylist,
+  navigateFallbackAllowlist,
   navigationPreload,
   offlineGoogleAnalytics,
   runtimeCaching,
@@ -47,12 +48,13 @@ module.exports = async ({
     cleanupOutdatedCaches,
     clientsClaim,
     directoryIndex,
+    disableDevLogs,
     ignoreURLParametersMatching,
     importScripts,
     manifestEntries,
     navigateFallback,
-    navigateFallbackBlacklist,
-    navigateFallbackWhitelist,
+    navigateFallbackDenylist,
+    navigateFallbackAllowlist,
     navigationPreload,
     offlineGoogleAnalytics,
     runtimeCaching,
@@ -72,7 +74,7 @@ module.exports = async ({
     const filePaths = [];
 
     for (const file of files) {
-      const filePath = upath.resolve(outputDir, file.name);
+      const filePath = upath.resolve(file.name);
       filePaths.push(filePath);
       await fse.writeFile(filePath, file.contents);
     }

@@ -17,7 +17,7 @@ interface MessageMap {
   [messageID: string]: (param: MessageParam) => string;
 }
 
-export const messages : MessageMap = {
+export const messages: MessageMap = {
   'invalid-value': ({paramName, validValueDescription, value}) => {
     if (!paramName || !validValueDescription) {
       throw new Error(`Unexpected input to 'invalid-value' error.`);
@@ -25,13 +25,6 @@ export const messages : MessageMap = {
     return `The '${paramName}' parameter was given a value with an ` +
       `unexpected value. ${validValueDescription} Received a value of ` +
       `${JSON.stringify(value)}.`;
-  },
-
-  'not-in-sw': ({moduleName}) => {
-    if (!moduleName) {
-      throw new Error(`Unexpected input to 'not-in-sw' error.`);
-    }
-    return `The '${moduleName}' must be used in a service worker.`;
   },
 
   'not-an-array': ({moduleName, className, funcName, paramName}) => {
@@ -96,7 +89,7 @@ export const messages : MessageMap = {
     return `Two of the entries passed to ` +
       `'workbox-precaching.PrecacheController.addToCacheList()' had the URL ` +
       `${firstEntry._entryId} but different revision details. Workbox is ` +
-      `is unable to cache and version the asset correctly. Please remove one ` +
+      `unable to cache and version the asset correctly. Please remove one ` +
       `of the entries.`;
   },
 
@@ -258,13 +251,17 @@ export const messages : MessageMap = {
   },
 
   'non-precached-url': ({url}) => {
-    return `createHandlerForURL('${url}') was called, but that URL is not ` +
-      `precached. Please pass in a URL that is precached instead.`;
+    return `createHandlerBoundToURL('${url}') was called, but that URL is ` +
+      `not precached. Please pass in a URL that is precached instead.`;
   },
 
   'add-to-cache-list-conflicting-integrities': ({url}) => {
     return `Two of the entries passed to ` +
       `'workbox-precaching.PrecacheController.addToCacheList()' had the URL ` +
       `${url} with different integrity values. Please remove one of them.`;
+  },
+
+  'missing-precache-entry': ({cacheName, url}) => {
+    return `Unable to find a precached response in ${cacheName} for ${url}.`;
   },
 };

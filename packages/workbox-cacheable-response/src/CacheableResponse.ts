@@ -24,11 +24,11 @@ export interface CacheableResponseOptions {
  * [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response)
  * to be considered cacheable.
  *
- * @memberof workbox.cacheableResponse
+ * @memberof module:workbox-cacheable-response
  */
 class CacheableResponse {
-  private _statuses?: CacheableResponseOptions['statuses'];
-  private _headers?: CacheableResponseOptions['headers'];
+  private readonly _statuses?: CacheableResponseOptions['statuses'];
+  private readonly _headers?: CacheableResponseOptions['headers'];
 
   /**
    * To construct a new CacheableResponse instance you must provide at least

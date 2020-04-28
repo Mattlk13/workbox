@@ -8,12 +8,15 @@
 
 import {assert} from 'workbox-core/_private/assert.js';
 import {cacheNames} from 'workbox-core/_private/cacheNames.js';
+import {dontWaitFor} from 'workbox-core/_private/dontWaitFor.js';
 import {getFriendlyURL} from 'workbox-core/_private/getFriendlyURL.js';
 import {logger} from 'workbox-core/_private/logger.js';
-import {WorkboxError} from 'workbox-core/_private/WorkboxError.js';
 import {registerQuotaErrorCallback} from 'workbox-core/registerQuotaErrorCallback.js';
+import {WorkboxError} from 'workbox-core/_private/WorkboxError.js';
 import {WorkboxPlugin} from 'workbox-core/types.js';
+
 import {CacheExpiration} from './CacheExpiration.js';
+
 import './_version.js';
 
 /**
@@ -32,11 +35,11 @@ import './_version.js';
  * When using `maxEntries`, the entry least-recently requested will be removed
  * from the cache first.
  *
- * @memberof workbox.expiration
+ * @memberof module:workbox-expiration
  */
 class ExpirationPlugin implements WorkboxPlugin {
-  private _config: object;
-  private _maxAgeSeconds?: number;
+  private readonly _config: object;
+  private readonly _maxAgeSeconds?: number;
   private _cacheExpirations: Map<string, CacheExpiration>;
 
   /**
@@ -114,7 +117,7 @@ class ExpirationPlugin implements WorkboxPlugin {
 
   /**
    * A "lifecycle" callback that will be triggered automatically by the
-   * `workbox.strategies` handlers when a `Response` is about to be returned
+   * `workbox-strategies` handlers when a `Response` is about to be returned
    * from a [Cache](https://developer.mozilla.org/en-US/docs/Web/API/Cache) to
    * the handler. It allows the `Response` to be inspected for freshness and
    * prevents it from being used if the `Response`'s `Date` header value is
@@ -139,12 +142,12 @@ class ExpirationPlugin implements WorkboxPlugin {
       return null;
     }
 
-    let isFresh = this._isResponseDateFresh(cachedResponse);
+    const isFresh = this._isResponseDateFresh(cachedResponse);
 
     // Expire entries to ensure that even if the expiration date has
     // expired, it'll only be used once.
     const cacheExpiration = this._getCacheExpiration(cacheName);
-    cacheExpiration.expireEntries();
+    dontWaitFor(cacheExpiration.expireEntries());
 
     // Update the metadata for the request URL to the current timestamp,
     // but don't `await` it as we don't want to block the response.
@@ -158,7 +161,7 @@ class ExpirationPlugin implements WorkboxPlugin {
           if ('request' in event) {
             logger.warn(`Unable to ensure service worker stays alive when ` +
               `updating cache entry for ` +
-              `'${getFriendlyURL((<FetchEvent> event).request.url)}'.`);
+              `'${getFriendlyURL((event as FetchEvent).request.url)}'.`);
           }
         }
       }
@@ -223,7 +226,7 @@ class ExpirationPlugin implements WorkboxPlugin {
 
   /**
    * A "lifecycle" callback that will be triggered automatically by the
-   * `workbox.strategies` handlers when an entry is added to a cache.
+   * `workbox-strategies` handlers when an entry is added to a cache.
    *
    * @param {Object} options
    * @param {string} options.cacheName Name of the cache that was updated.
@@ -276,7 +279,7 @@ class ExpirationPlugin implements WorkboxPlugin {
     // Do this one at a time instead of all at once via `Promise.all()` to
     // reduce the chance of inconsistency if a promise rejects.
     for (const [cacheName, cacheExpiration] of this._cacheExpirations) {
-      await caches.delete(cacheName);
+      await self.caches.delete(cacheName);
       await cacheExpiration.delete();
     }
 

@@ -29,8 +29,10 @@ const packagesDir = path.join(__dirname, '..', 'packages');
  * in the root package directory, along with the corresponding `.d.ts` files.
  *
  * @param {string} packageName
+ * @param {Object} [options]
+ * @param {boolean} [options.failOnError=true]
  */
-const transpilePackage = async (packageName) => {
+const transpilePackage = async (packageName, {failOnError = true} = {}) => {
   try {
     // Compile TypeScript for the given project.
     // Reference the local `node_modules` version of `tsc` since on Windows
@@ -50,13 +52,15 @@ const transpilePackage = async (packageName) => {
       if (!(await fs.pathExists(mjsFile))) {
         const mjsSource = `export * from './${assetBasename}.js';`;
 
-        // console.log({mjsFile, tsFile, assetBasename})
         fs.outputFileSync(mjsFile, mjsSource);
       }
     }
   } catch (error) {
-    logHelper.error(error.stdout);
-    throw error;
+    if (failOnError) {
+      throw error;
+    } else {
+      logHelper.error(error.stdout);
+    }
   }
 };
 
@@ -64,13 +68,14 @@ const transpilePackage = async (packageName) => {
  * Transpiles a package iff it has TypeScript source files.
  *
  * @param {string} packagePath
+ * @param {Object} [options]
  */
-const transpilePackagesOrSkip = async (packagePath) => {
-  // `packagePath` will be posix style because it comes from `glog()`.
+const transpilePackageOrSkip = async (packagePath, options) => {
+  // `packagePath` will be posix style because it comes from `glob()`.
   const packageName = packagePath.split('/').slice(-1)[0];
 
   if (await fs.pathExists(path.join(packagePath, 'tsconfig.json'))) {
-    await queueTranspile(packageName);
+    await queueTranspile(packageName, options);
   } else {
     logHelper.log(ol`Skipping package '${packageName}'
         not yet converted to typescript.`);
@@ -88,18 +93,20 @@ const debouncedTranspilerMap = {};
 /**
  * Takes a package name and schedules that package's source TypeScript code
  * to be converted to JavaScript. If a transpilation is already scheduled, it
- * won't be queued twice, so this function is safe to call as frequenty as
+ * won't be queued twice, so this function is safe to call as frequently as
  * needed.
  *
  * @param {string} packageName
+ * @param {Object} [options]
  */
-const queueTranspile = async (packageName) => {
+const queueTranspile = async (packageName, options) => {
   if (!debouncedTranspilerMap[packageName]) {
     debouncedTranspilerMap[packageName] = new AsyncDebounce(async () => {
-      await transpilePackage(packageName);
+      await transpilePackage(packageName, options);
     });
   }
   await debouncedTranspilerMap[packageName].call();
+  debouncedTranspilerMap[packageName] = null;
 };
 
 /**
@@ -121,10 +128,7 @@ const needsTranspile = (packageName) => {
 };
 
 gulp.task('transpile-typescript', gulp.series(packageRunnner(
-    'transpile-typescript', 'all', transpilePackagesOrSkip)));
-
-gulp.task('transpile-typescript:watch', gulp.series(packageRunnner(
-    'transpile-typescript', 'all', transpilePackagesOrSkip)));
+    'transpile-typescript', 'all', transpilePackageOrSkip)));
 
 gulp.task('transpile-typescript:watch', () => {
   const watcher = gulp.watch(`./${global.packageOrStar}/workbox-*/src/**/*.ts`);
@@ -132,12 +136,13 @@ gulp.task('transpile-typescript:watch', () => {
     const changedPkg = path.relative(packagesDir, file).split(path.sep)[0];
 
     pendingChangesMap[changedPkg] = true;
-    await queueTranspile(changedPkg);
+    await queueTranspile(changedPkg, {failOnError: false});
     pendingChangesMap[changedPkg] = false;
   });
 });
 
 module.exports = {
+  transpilePackageOrSkip,
   queueTranspile,
   needsTranspile,
 };

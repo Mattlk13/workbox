@@ -18,12 +18,17 @@ module.exports = {
   cleanupOutdatedCaches: joi.boolean().default(defaults.cleanupOutdatedCaches),
   clientsClaim: joi.boolean().default(defaults.clientsClaim),
   directoryIndex: joi.string(),
+  disableDevLogs: joi.boolean().default(defaults.disableDevLogs),
   ignoreURLParametersMatching: joi.array().items(regExpObject),
   importScripts: joi.array().items(joi.string()),
   inlineWorkboxRuntime: joi.boolean().default(defaults.inlineWorkboxRuntime),
   navigateFallback: joi.string().default(defaults.navigateFallback),
-  navigateFallbackBlacklist: joi.array().items(regExpObject),
-  navigateFallbackWhitelist: joi.array().items(regExpObject),
+  navigateFallbackAllowlist: joi.array().items(regExpObject),
+  navigateFallbackBlacklist: joi.forbidden().error(new Error(
+      'navigateFallbackBlacklist has been renamed navigateFallbackDenylist.')),
+  navigateFallbackDenylist: joi.array().items(regExpObject),
+  navigateFallbackWhitelist: joi.forbidden().error(new Error(
+      'navigateFallbackWhitelist has been renamed navigateFallbackAllowlist.')),
   navigationPreload: joi.boolean().default(defaults.navigationPreload),
   offlineGoogleAnalytics: joi.alternatives().try(joi.boolean(), joi.object())
       .default(defaults.offlineGoogleAnalytics),
@@ -34,7 +39,7 @@ module.exports = {
         'HEAD',
         'PATCH',
         'POST',
-        'PUT'
+        'PUT',
     ),
     urlPattern: [regExpObject, joi.string(), joi.func()],
     handler: [

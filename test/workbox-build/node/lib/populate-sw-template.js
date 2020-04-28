@@ -72,10 +72,11 @@ describe(`[workbox-build] lib/populate-sw-template.js`, function() {
       cacheId: undefined,
       cleanupOutdatedCaches: undefined,
       clientsClaim: undefined,
+      disableDevLogs: undefined,
       importScripts: undefined,
       navigateFallback: undefined,
-      navigateFallbackBlacklist: undefined,
-      navigateFallbackWhitelist: undefined,
+      navigateFallbackDenylist: undefined,
+      navigateFallbackAllowlist: undefined,
       navigationPreload: undefined,
       offlineAnalyticsConfigString: undefined,
       precacheOptionsString,
@@ -89,13 +90,14 @@ describe(`[workbox-build] lib/populate-sw-template.js`, function() {
     const cleanupOutdatedCaches = true;
     const clientsClaim = true;
     const directoryIndex = 'index.html';
+    const disableDevLogs = true;
     const handleFetch = true;
     const ignoreURLParametersMatching = [/a/, /b/];
     const importScripts = ['test.js'];
     const manifestEntries = [{url: '/path/to/index.html', revision: '1234'}];
     const navigateFallback = '/shell.html';
-    const navigateFallbackBlacklist = [/another-test/];
-    const navigateFallbackWhitelist = [/test/];
+    const navigateFallbackDenylist = [/another-test/];
+    const navigateFallbackAllowlist = [/test/];
     const navigationPreload = true;
     const offlineGoogleAnalytics = true;
     const offlineAnalyticsConfigString = '{}';
@@ -122,13 +124,14 @@ describe(`[workbox-build] lib/populate-sw-template.js`, function() {
       cleanupOutdatedCaches,
       clientsClaim,
       directoryIndex,
+      disableDevLogs,
       handleFetch,
       ignoreURLParametersMatching,
       importScripts,
       manifestEntries,
       navigateFallback,
-      navigateFallbackBlacklist,
-      navigateFallbackWhitelist,
+      navigateFallbackDenylist,
+      navigateFallbackAllowlist,
       navigationPreload,
       offlineGoogleAnalytics,
       runtimeCaching,
@@ -145,11 +148,12 @@ describe(`[workbox-build] lib/populate-sw-template.js`, function() {
       cacheId,
       cleanupOutdatedCaches,
       clientsClaim,
+      disableDevLogs,
       importScripts,
       manifestEntries,
       navigateFallback,
-      navigateFallbackBlacklist,
-      navigateFallbackWhitelist,
+      navigateFallbackDenylist,
+      navigateFallbackAllowlist,
       navigationPreload,
       offlineAnalyticsConfigString,
       runtimeCaching: runtimeCachingPlaceholder,
@@ -195,10 +199,11 @@ describe(`[workbox-build] lib/populate-sw-template.js`, function() {
       cacheId: undefined,
       cleanupOutdatedCaches: undefined,
       clientsClaim: undefined,
+      disableDevLogs: undefined,
       importScripts: undefined,
       navigateFallback: undefined,
-      navigateFallbackBlacklist: undefined,
-      navigateFallbackWhitelist: undefined,
+      navigateFallbackDenylist: undefined,
+      navigateFallbackAllowlist: undefined,
       navigationPreload: undefined,
       offlineAnalyticsConfigString,
       precacheOptionsString,

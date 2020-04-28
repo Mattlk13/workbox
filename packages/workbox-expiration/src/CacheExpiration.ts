@@ -6,10 +6,12 @@
   https://opensource.org/licenses/MIT.
 */
 
-import {CacheTimestampsModel} from './models/CacheTimestampsModel.js';
-import {WorkboxError} from 'workbox-core/_private/WorkboxError.js';
 import {assert} from 'workbox-core/_private/assert.js';
+import {dontWaitFor} from 'workbox-core/_private/dontWaitFor.js';
 import {logger} from 'workbox-core/_private/logger.js';
+import {WorkboxError} from 'workbox-core/_private/WorkboxError.js';
+
+import {CacheTimestampsModel} from './models/CacheTimestampsModel.js';
 
 import './_version.js';
 
@@ -24,15 +26,15 @@ interface CacheExpirationConfig {
  * limit on the number of responses stored in a
  * [`Cache`](https://developer.mozilla.org/en-US/docs/Web/API/Cache).
  *
- * @memberof workbox.expiration
+ * @memberof module:workbox-expiration
  */
 class CacheExpiration {
-  private _isRunning: boolean = false;
-  private _rerunRequested: boolean = false;
-  private _maxEntries?: number;
-  private _maxAgeSeconds?: number;
-  private _cacheName: string;
-  private _timestampModel: CacheTimestampsModel;
+  private _isRunning = false;
+  private _rerunRequested = false;
+  private readonly _maxEntries?: number;
+  private readonly _maxAgeSeconds?: number;
+  private readonly _cacheName: string;
+  private readonly _timestampModel: CacheTimestampsModel;
 
   /**
    * To construct a new CacheExpiration instance you must provide at least
@@ -108,7 +110,7 @@ class CacheExpiration {
         minTimestamp, this._maxEntries);
 
     // Delete URLs from the cache
-    const cache = await caches.open(this._cacheName);
+    const cache = await self.caches.open(this._cacheName);
     for (const url of urlsExpired) {
       await cache.delete(url);
     }
@@ -132,7 +134,7 @@ class CacheExpiration {
     this._isRunning = false;
     if (this._rerunRequested) {
       this._rerunRequested = false;
-      this.expireEntries();
+      dontWaitFor(this.expireEntries());
     }
   }
 
@@ -178,7 +180,7 @@ class CacheExpiration {
       return false;
     } else {
       const timestamp = await this._timestampModel.getTimestamp(url);
-      const expireOlderThan = Date.now() - (this._maxAgeSeconds! * 1000);
+      const expireOlderThan = Date.now() - (this._maxAgeSeconds * 1000);
       return (timestamp < expireOlderThan);
     }
   }

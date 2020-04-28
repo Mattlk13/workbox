@@ -12,7 +12,7 @@ import './_version.js';
 
 
 // Give TypeScript the correct global.
-declare var self: ServiceWorkerGlobalScope;
+declare let self: ServiceWorkerGlobalScope;
 
 /**
  * If the browser supports Navigation Preload, then this will enable it.
@@ -22,9 +22,9 @@ declare var self: ServiceWorkerGlobalScope;
  * the value of the `Service-Worker-Navigation-Preload` header which will be
  * sent to the server when making the navigation request.
  *
- * @memberof workbox.navigationPreload
+ * @memberof module:workbox-navigation-preload
  */
-function enable(headerValue: string) {
+function enable(headerValue?: string) {
   if (isSupported()) {
     self.addEventListener('activate', (event: ExtendableEvent) => {
       event.waitUntil(

@@ -30,14 +30,14 @@ export interface QueueStoreEntry extends UnidentifiedQueueStoreEntry {
 }
 
 /**
- * A class to manage storing requests from a Queue in IndexedbDB,
+ * A class to manage storing requests from a Queue in IndexedDB,
  * indexed by their queue name for easier access.
  *
  * @private
  */
 export class QueueStore {
-  private _queueName: string;
-  private _db: DBWrapper;
+  private readonly _queueName: string;
+  private readonly _db: DBWrapper;
 
   /**
    * Associates this instance with a Queue instance, so entries added can be
@@ -82,11 +82,11 @@ export class QueueStore {
     delete entry.id;
     entry.queueName = this._queueName;
 
-    await this._db.add(OBJECT_STORE_NAME, entry);
+    await this._db.add!(OBJECT_STORE_NAME, entry);
   }
 
   /**
-   * Preppend an entry first in the queue.
+   * Prepend an entry first in the queue.
    *
    * @param {Object} entry
    * @param {Object} entry.requestData
@@ -123,7 +123,7 @@ export class QueueStore {
     }
     entry.queueName = this._queueName;
 
-    await this._db.add(OBJECT_STORE_NAME, entry);
+    await this._db.add!(OBJECT_STORE_NAME, entry);
   }
 
   /**
@@ -149,7 +149,7 @@ export class QueueStore {
   /**
    * Returns all entries in the store matching the `queueName`.
    *
-   * @param {Object} options See workbox.backgroundSync.Queue~getAll}
+   * @param {Object} options See {@link module:workbox-background-sync.Queue~getAll}
    * @return {Promise<Array<Object>>}
    * @private
    */
@@ -172,7 +172,7 @@ export class QueueStore {
    * @param {number} id
    */
   async deleteEntry(id: number) {
-    await this._db.delete(OBJECT_STORE_NAME, id);
+    await this._db.delete!(OBJECT_STORE_NAME, id);
   }
 
   /**
@@ -203,7 +203,7 @@ export class QueueStore {
    * @private
    */
   private _upgradeDb(event: IDBVersionChangeEvent) {
-    const db = (<IDBOpenDBRequest> event.target).result;
+    const db = (event.target as IDBOpenDBRequest).result;
 
     if (event.oldVersion > 0 && event.oldVersion < DB_VERSION) {
       if (db.objectStoreNames.contains(OBJECT_STORE_NAME)) {

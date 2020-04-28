@@ -10,14 +10,16 @@ import './_version.js';
 
 
 // Give TypeScript the correct global.
-declare var self: ServiceWorkerGlobalScope;
+declare let self: ServiceWorkerGlobalScope;
 
 /**
  * Claim any currently available clients once the service worker
  * becomes active. This is normally used in conjunction with `skipWaiting()`.
  *
- * @alias workbox.core.clientsClaim
+ * @memberof module:workbox-core
  */
-export const clientsClaim = () => {
-  addEventListener('activate', () => self.clients.claim());
-};
+function clientsClaim() {
+  self.addEventListener('activate', () => self.clients.claim());
+}
+
+export {clientsClaim}

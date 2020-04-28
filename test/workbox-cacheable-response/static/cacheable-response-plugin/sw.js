@@ -14,14 +14,14 @@ importScripts('/infra/testing/comlink/sw-interface.js');
 
 workbox.routing.registerRoute(
     /.*.txt/,
-    workbox.strategies.cacheFirst({
+    new workbox.strategies.CacheFirst({
       cacheName: 'cacheable-response-cache',
       plugins: [
         new workbox.cacheableResponse.CacheableResponsePlugin({
           statuses: [0, 200],
         }),
       ],
-    })
+    }),
 );
 
 self.addEventListener('install', (event) => event.waitUntil(self.skipWaiting()));

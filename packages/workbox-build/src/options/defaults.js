@@ -10,6 +10,8 @@ module.exports = {
   babelPresetEnvTargets: ['chrome >= 56'],
   cleanupOutdatedCaches: false,
   clientsClaim: false,
+  compileSrc: true,
+  disableDevLogs: false,
   exclude: [
     /\.map$/,
     /^manifest.*\.js$/,

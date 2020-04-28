@@ -9,8 +9,6 @@
 const inquirer = require('inquirer');
 const ol = require('common-tags').oneLine;
 
-const assertValidSWSrc = require('../assert-valid-sw-src');
-
 // The key used for the question/answer.
 const name = 'swSrc';
 
@@ -22,16 +20,12 @@ function askQuestion() {
     name,
     message: ol`Where's your existing service worker file? To be used with
       injectManifest, it should include a call to
-      'workbox.precaching.precacheAndRoute([])'`,
+      'self.__WB_MANIFEST'`,
     type: 'input',
   }]);
 }
 
 module.exports = async () => {
   const answers = await askQuestion();
-  const swSrc = answers[name].trim();
-
-  await assertValidSWSrc(swSrc);
-
-  return swSrc;
+  return answers[name].trim();
 };

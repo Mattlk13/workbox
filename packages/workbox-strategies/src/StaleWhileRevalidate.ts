@@ -38,25 +38,25 @@ interface StaleWhileRevalidateOptions {
  *
  * By default, this strategy will cache responses with a 200 status code as
  * well as [opaque responses]{@link https://developers.google.com/web/tools/workbox/guides/handle-third-party-requests}.
- * Opaque responses are are cross-origin requests where the response doesn't
+ * Opaque responses are cross-origin requests where the response doesn't
  * support [CORS]{@link https://enable-cors.org/}.
  *
  * If the network request fails, and there is no cache match, this will throw
  * a `WorkboxError` exception.
  *
- * @memberof workbox.strategies
+ * @memberof module:workbox-strategies
  */
 class StaleWhileRevalidate implements RouteHandlerObject {
-  private _cacheName: string;
-  private _plugins: WorkboxPlugin[];
-  private _fetchOptions?: RequestInit;
-  private _matchOptions?: CacheQueryOptions;
+  private readonly _cacheName: string;
+  private readonly _plugins: WorkboxPlugin[];
+  private readonly _fetchOptions?: RequestInit;
+  private readonly _matchOptions?: CacheQueryOptions;
 
   /**
    * @param {Object} options
    * @param {string} options.cacheName Cache name to store and retrieve
    * requests. Defaults to cache names provided by
-   * [workbox-core]{@link workbox.core.cacheNames}.
+   * [workbox-core]{@link module:workbox-core.cacheNames}.
    * @param {Array<Object>} options.plugins [Plugins]{@link https://developers.google.com/web/tools/workbox/guides/using-plugins}
    * to use in conjunction with this caching strategy.
    * @param {Object} options.fetchOptions Values passed along to the
@@ -69,7 +69,7 @@ class StaleWhileRevalidate implements RouteHandlerObject {
     this._plugins = options.plugins || [];
 
     if (options.plugins) {
-      let isUsingCacheWillUpdate =
+      const isUsingCacheWillUpdate =
         options.plugins.some((plugin) => !!plugin.cacheWillUpdate);
       this._plugins = isUsingCacheWillUpdate ?
         options.plugins : [cacheOkAndOpaquePlugin, ...options.plugins];
@@ -85,15 +85,19 @@ class StaleWhileRevalidate implements RouteHandlerObject {
   /**
    * This method will perform a request strategy and follows an API that
    * will work with the
-   * [Workbox Router]{@link workbox.routing.Router}.
+   * [Workbox Router]{@link module:workbox-routing.Router}.
    *
    * @param {Object} options
-   * @param {Request} options.request The request to run this strategy for.
+   * @param {Request|string} options.request A request to run this strategy for.
    * @param {Event} [options.event] The event that triggered the request.
    * @return {Promise<Response>}
    */
   async handle({event, request}: RouteHandlerCallbackOptions): Promise<Response> {
-   const logs = [];
+    const logs = [];
+
+    if (typeof request === 'string') {
+      request = new Request(request);
+    }
 
     if (process.env.NODE_ENV !== 'production') {
       assert!.isInstance(request, Request, {
@@ -145,7 +149,7 @@ class StaleWhileRevalidate implements RouteHandlerObject {
     if (process.env.NODE_ENV !== 'production') {
       logger.groupCollapsed(
           messages.strategyStart('StaleWhileRevalidate', request));
-      for (let log of logs) {
+      for (const log of logs) {
         logger.log(log);
       }
       messages.printFinalResponse(response);
@@ -167,8 +171,8 @@ class StaleWhileRevalidate implements RouteHandlerObject {
    * @private
    */
   async _getFromNetwork({request, event}: {
-    request: Request,
-    event?: ExtendableEvent,
+    request: Request;
+    event?: ExtendableEvent;
   }): Promise<Response> {
     const response = await fetchWrapper.fetch({
       request,

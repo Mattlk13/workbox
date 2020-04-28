@@ -32,7 +32,7 @@ describe(`calculateEffectiveBoundaries()`, function() {
           expect(error.details).to.have.property('funcName', 'calculateEffectiveBoundaries');
           expect(error.details).to.have.property('paramName', 'blob');
           expect(error.details).to.have.property('expectedClass', Blob);
-        }
+        },
     );
   });
 
@@ -41,7 +41,7 @@ describe(`calculateEffectiveBoundaries()`, function() {
     const end = 1;
     await expectError(
         () => calculateEffectiveBoundaries(SOURCE_BLOB, start, end),
-        'range-not-satisfiable'
+        'range-not-satisfiable',
     );
   });
 
@@ -50,15 +50,15 @@ describe(`calculateEffectiveBoundaries()`, function() {
     const end = SOURCE_BLOB_SIZE + 1;
     await expectError(
         () => calculateEffectiveBoundaries(SOURCE_BLOB, start, end),
-        'range-not-satisfiable'
+        'range-not-satisfiable',
     );
   });
 
   it(`should return the expected boundaries when it's called with valid parameters`, function() {
     const testCases = [
       [{start: 100, end: 200}, {start: 100, end: 201}],
-      [{start: null, end: 200}, {start: 56, end: 256}],
-      [{start: 100, end: null}, {start: 100, end: 256}],
+      [{start: undefined, end: 200}, {start: 56, end: 256}],
+      [{start: 100, end: undefined}, {start: 100, end: 256}],
     ];
 
     for (const [sourceBoundaries, expectedBoundaries] of testCases) {

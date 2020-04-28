@@ -11,9 +11,9 @@ importScripts('/infra/testing/comlink/sw-interface.js');
 
 workbox.routing.registerRoute(
     new RegExp('/__WORKBOX/uniqueValue'),
-    workbox.strategies.staleWhileRevalidate({
+    new workbox.strategies.StaleWhileRevalidate({
       cacheName: 'stale-while-revalidate',
-    })
+    }),
 );
 
 self.addEventListener('install', (event) => event.waitUntil(self.skipWaiting()));

@@ -7,11 +7,15 @@
 */
 
 const assert = require('assert');
-const expect = require('chai').expect;
+const chai = require('chai');
+const chaiMatchPattern = require('chai-match-pattern');
 const fse = require('fs-extra');
 const makeServiceWorkerEnv = require('service-worker-mock');
 const sinon = require('sinon');
 const vm = require('vm');
+
+chai.use(chaiMatchPattern);
+const {expect} = chai;
 
 // See https://github.com/chaijs/chai/issues/697
 function stringifyFunctionsInArray(arr) {
@@ -109,7 +113,7 @@ function setupSpiesAndContextForGenerateSW() {
     importScripts,
     CacheFirst: sinon.stub().returns({name: 'CacheFirst'}),
     clientsClaim: sinon.spy(),
-    createHandlerForURL: sinon.stub().returns('/urlWithCacheKey'),
+    createHandlerBoundToURL: sinon.stub().returns('/urlWithCacheKey'),
     enable: sinon.spy(),
     initialize: sinon.spy(),
     NavigationRoute: sinon.stub().returns({name: 'NavigationRoute'}),
@@ -135,27 +139,24 @@ function setupSpiesAndContextForGenerateSW() {
   return {addEventListener, context, methodsToSpies: workboxContext};
 }
 
-function validateMethodCalls({methodsToSpies, expectedMethodCalls}) {
+function validateMethodCalls({methodsToSpies, expectedMethodCalls, context}) {
   for (const [method, spy] of Object.entries(methodsToSpies)) {
     if (spy.called) {
-      // Special-case handling for importScripts(), as the first call may be
-      // to load in the workbox runtime. We don't want to have to hardcode the
-      // unique hash associated with the runtime into our test suite.
-      if (method === 'importScripts') {
-        if (spy.args[0] && spy.args[0][0].startsWith('./workbox-')) {
-          // Remove the first call.
-          spy.args.shift();
-        }
-      }
-
       const args = spy.args.map(
           (arg) => Array.isArray(arg) ? stringifyFunctionsInArray(arg) : arg);
-      expect(args).to.deep.equal(expectedMethodCalls[method],
-          `while testing method calls for ${method}`);
+
+      expect(args).to.matchPattern(expectedMethodCalls[method]);
     } else {
       expect(expectedMethodCalls[method],
           `while testing method calls for ${method}`).to.be.undefined;
     }
+  }
+
+  // Special validation for __WB_DISABLE_DEV_LOGS, which is a boolean
+  // assignment, so we can't stub it out.
+  if ('__WB_DISABLE_DEV_LOGS' in expectedMethodCalls) {
+    expect(context.self.__WB_DISABLE_DEV_LOGS).to.eql(
+        expectedMethodCalls.__WB_DISABLE_DEV_LOGS, `__WB_DISABLE_DEV_LOGS`);
   }
 }
 
@@ -194,7 +195,7 @@ module.exports = async ({
 
   vm.runInNewContext(swString, context);
 
-  validateMethodCalls({methodsToSpies, expectedMethodCalls});
+  validateMethodCalls({methodsToSpies, expectedMethodCalls, context});
 
   // Optionally check the usage of addEventListener().
   if (addEventListenerValidation) {

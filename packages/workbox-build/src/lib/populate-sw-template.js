@@ -19,12 +19,13 @@ module.exports = ({
   cleanupOutdatedCaches,
   clientsClaim,
   directoryIndex,
+  disableDevLogs,
   ignoreURLParametersMatching,
   importScripts,
   manifestEntries = [],
   navigateFallback,
-  navigateFallbackBlacklist,
-  navigateFallbackWhitelist,
+  navigateFallbackDenylist,
+  navigateFallbackAllowlist,
   navigationPreload,
   offlineGoogleAnalytics,
   runtimeCaching = [],
@@ -50,7 +51,7 @@ module.exports = ({
     precacheOptionsString = precacheOptionsString.replace(
         `"ignoreURLParametersMatching": []`,
         `"ignoreURLParametersMatching": [` +
-      `${ignoreURLParametersMatching.join(', ')}]`
+      `${ignoreURLParametersMatching.join(', ')}]`,
     );
   }
 
@@ -73,11 +74,12 @@ module.exports = ({
       cacheId,
       cleanupOutdatedCaches,
       clientsClaim,
+      disableDevLogs,
       importScripts,
       manifestEntries,
       navigateFallback,
-      navigateFallbackBlacklist,
-      navigateFallbackWhitelist,
+      navigateFallbackDenylist,
+      navigateFallbackAllowlist,
       navigationPreload,
       offlineAnalyticsConfigString,
       precacheOptionsString,

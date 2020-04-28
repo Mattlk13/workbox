@@ -16,15 +16,18 @@ import './_version.js';
 
 
 // Give TypeScript the correct global.
-declare var self: ServiceWorkerGlobalScope;
+declare let self: ServiceWorkerGlobalScope;
 
-const TAG_PREFIX = 'workbox-background-sync';
-const MAX_RETENTION_TIME = 60 * 24 * 7; // 7 days in minutes
+interface OnSyncCallbackOptions {
+  queue: Queue;
+}
 
-const queueNames = new Set();
+interface OnSyncCallback {
+  (options: OnSyncCallbackOptions): void|Promise<void>;
+}
 
 export interface QueueOptions {
-  onSync?: Function;
+  onSync?: OnSyncCallback;
   maxRetentionTime?: number;
 }
 
@@ -34,20 +37,45 @@ interface QueueEntry {
   metadata?: object;
 }
 
+const TAG_PREFIX = 'workbox-background-sync';
+const MAX_RETENTION_TIME = 60 * 24 * 7; // 7 days in minutes
+
+const queueNames = new Set();
+
+/**
+ * Converts a QueueStore entry into the format exposed by Queue. This entails
+ * converting the request data into a real request and omitting the `id` and
+ * `queueName` properties.
+ *
+ * @param {Object} queueStoreEntry
+ * @return {Object}
+ * @private
+ */
+const convertEntry = (queueStoreEntry: UnidentifiedQueueStoreEntry): QueueEntry => {
+  const queueEntry: QueueEntry = {
+    request: new StorableRequest(queueStoreEntry.requestData).toRequest(),
+    timestamp: queueStoreEntry.timestamp,
+  };
+  if (queueStoreEntry.metadata) {
+    queueEntry.metadata = queueStoreEntry.metadata;
+  }
+  return queueEntry;
+};
+
 /**
  * A class to manage storing failed requests in IndexedDB and retrying them
  * later. All parts of the storing and replaying process are observable via
  * callbacks.
  *
- * @memberof workbox.backgroundSync
+ * @memberof module:workbox-background-sync
  */
 class Queue {
-  private _name: string;
-  private _onSync: Function;
-  private _maxRetentionTime: number;
-  private _queueStore: QueueStore;
-  private _syncInProgress: boolean = false;
-  private _requestsAddedDuringSync: boolean = false;
+  private readonly _name: string;
+  private readonly _onSync: OnSyncCallback;
+  private readonly _maxRetentionTime: number;
+  private readonly _queueStore: QueueStore;
+  private _syncInProgress = false;
+  private _requestsAddedDuringSync = false;
 
   /**
    * Creates an instance of Queue with the given options
@@ -400,26 +428,5 @@ class Queue {
     return queueNames;
   }
 }
-
-
-/**
- * Converts a QueueStore entry into the format exposed by Queue. This entails
- * converting the request data into a real request and omitting the `id` and
- * `queueName` properties.
- *
- * @param {Object} queueStoreEntry
- * @return {Object}
- * @private
- */
-const convertEntry = (queueStoreEntry: UnidentifiedQueueStoreEntry): QueueEntry => {
-  const queueEntry: QueueEntry = {
-    request: new StorableRequest(queueStoreEntry.requestData).toRequest(),
-    timestamp: queueStoreEntry.timestamp,
-  };
-  if (queueStoreEntry.metadata) {
-    queueEntry.metadata = queueStoreEntry.metadata;
-  }
-  return queueEntry;
-};
 
 export {Queue};

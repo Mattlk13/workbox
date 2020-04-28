@@ -9,16 +9,6 @@
 import {WorkboxError, WorkboxErrorDetails} from '../_private/WorkboxError.js';
 import '../_version.js';
 
-
-/*
- * This method returns true if the current context is a service worker.
- */
-const isSWEnv = (moduleName: string) => {
-  if (!('ServiceWorkerGlobalScope' in self)) {
-    throw new WorkboxError('not-in-sw', {moduleName});
-  }
-};
-
 /*
  * This method throws if the supplied value is not an array.
  * The destructed values are required to produce a meaningful error for users.
@@ -41,7 +31,7 @@ const hasMethod = (
 ) => {
   const type = typeof object[expectedMethod];
   if (type !== 'function') {
-    details.expectedMethod = expectedMethod;
+    details['expectedMethod'] = expectedMethod;
     throw new WorkboxError('missing-a-method', details);
   }
 };
@@ -52,7 +42,7 @@ const isType = (
   details: WorkboxErrorDetails,
 ) => {
   if (typeof object !== expectedType) {
-    details.expectedType = expectedType;
+    details['expectedType'] = expectedType;
     throw new WorkboxError('incorrect-type', details);
   }
 };
@@ -63,7 +53,7 @@ const isInstance = (
   details: WorkboxErrorDetails,
 ) => {
   if (!(object instanceof expectedClass)) {
-    details.expectedClass = expectedClass;
+    details['expectedClass'] = expectedClass;
     throw new WorkboxError('incorrect-class', details);
   }
 };
@@ -73,7 +63,7 @@ const isOneOf = (
   validValues: any[],
   details: WorkboxErrorDetails) => {
   if (!validValues.includes(value)) {
-    details.validValueDescription =
+    details['validValueDescription'] =
         `Valid values are ${JSON.stringify(validValues)}.`
     throw new WorkboxError('invalid-value', details);
   }
@@ -89,7 +79,7 @@ const isArrayOfClass = (
     throw error;
   }
 
-  for (let item of value) {
+  for (const item of value) {
     if (!(item instanceof expectedClass)) {
       throw error;
     }
@@ -101,7 +91,6 @@ const finalAssertExports = process.env.NODE_ENV === 'production' ? null : {
   isArray,
   isInstance,
   isOneOf,
-  isSWEnv,
   isType,
   isArrayOfClass,
 };

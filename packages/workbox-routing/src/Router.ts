@@ -23,13 +23,13 @@ type RequestArgs = string | [string, RequestInit?];
 interface CacheURLsMessageData {
   type: string;
   payload: {
-    urlsToCache: RequestArgs[],
+    urlsToCache: RequestArgs[];
   };
 }
 
 /**
  * The Router can be used to process a FetchEvent through one or more
- * [Routes]{@link workbox.routing.Route} responding  with a Request if
+ * [Routes]{@link module:workbox-routing.Route} responding  with a Request if
  * a matching route exists.
  *
  * If no route matches a given a request, the Router will use a "default"
@@ -42,12 +42,12 @@ interface CacheURLsMessageData {
  * If a request matches multiple routes, the **earliest** registered route will
  * be used to respond to the request.
  *
- * @memberof workbox.routing
+ * @memberof module:workbox-routing
  */
 class Router {
-  private _routes: Map<HTTPMethod, Route[]>;
-  private _defaultHandler: HandlerObject;
-  private _catchHandler: HandlerObject;
+  private readonly _routes: Map<HTTPMethod, Route[]>;
+  private _defaultHandler?: HandlerObject;
+  private _catchHandler?: HandlerObject;
 
   /**
    * Initializes a new Router.
@@ -57,7 +57,7 @@ class Router {
   }
 
   /**
-   * @return {Map<string, Array<workbox.routing.Route>>} routes A `Map` of HTTP
+   * @return {Map<string, Array<module:workbox-routing.Route>>} routes A `Map` of HTTP
    * method name ('GET', etc.) to an array of all the corresponding `Route`
    * instances that are registered.
    */
@@ -70,13 +70,14 @@ class Router {
    * the event's request.
    */
   addFetchListener() {
-    self.addEventListener('fetch', (event: FetchEvent) => {
+    // See https://github.com/Microsoft/TypeScript/issues/28357#issuecomment-436484705
+    self.addEventListener('fetch', ((event: FetchEvent) => {
       const {request} = event;
       const responsePromise = this.handleRequest({request, event});
       if (responsePromise) {
         event.respondWith(responsePromise);
       }
-    });
+    }) as EventListener);
   }
 
   /**
@@ -102,7 +103,8 @@ class Router {
    * ```
    */
   addCacheListener() {
-    self.addEventListener('message', async (event: ExtendableMessageEvent) => {
+    // See https://github.com/Microsoft/TypeScript/issues/28357#issuecomment-436484705
+    self.addEventListener('message', ((event: ExtendableMessageEvent) => {
       if (event.data && event.data.type === 'CACHE_URLS') {
         const {payload}: CacheURLsMessageData = event.data;
 
@@ -128,11 +130,10 @@ class Router {
 
         // If a MessageChannel was used, reply to the message on success.
         if (event.ports && event.ports[0]) {
-          await requestPromises;
-          event.ports[0].postMessage(true);
+          requestPromises.then(() => event.ports[0].postMessage(true));
         }
       }
-    });
+    }) as EventListener);
   }
 
   /**
@@ -149,8 +150,8 @@ class Router {
    *     route and there's no `defaultHandler`, `undefined` is returned.
    */
   handleRequest({request, event}: {
-    request: Request,
-    event?: ExtendableEvent,
+    request: Request;
+    event?: ExtendableEvent;
   }): Promise<Response> | undefined {
     if (process.env.NODE_ENV !== 'production') {
       assert!.isInstance(request, Request, {
@@ -170,10 +171,10 @@ class Router {
       return;
     }
 
-    let {params, route} = this.findMatchingRoute({url, request, event});
+    const {params, route} = this.findMatchingRoute({url, request, event});
     let handler = route && route.handler;
 
-    let debugMessages = [];
+    const debugMessages = [];
     if (process.env.NODE_ENV !== 'production') {
       if (handler) {
         debugMessages.push([
@@ -211,6 +212,7 @@ class Router {
       // We have a handler, meaning Workbox is going to handle the route.
       // print the routing details to the console.
       logger.groupCollapsed(`Router is responding to: ${getFriendlyURL(url)}`);
+
       debugMessages.forEach((msg) => {
         if (Array.isArray(msg)) {
           logger.log(...msg);
@@ -218,12 +220,6 @@ class Router {
           logger.log(msg);
         }
       });
-
-      // The Request and Response objects contains a great deal of information,
-      // hide it under a group in case developers want to see it.
-      logger.groupCollapsed(`View request details here.`);
-      logger.log(request);
-      logger.groupEnd();
 
       logger.groupEnd();
     }
@@ -237,7 +233,7 @@ class Router {
       responsePromise = Promise.reject(err);
     }
 
-    if (responsePromise && this._catchHandler) {
+    if (responsePromise instanceof Promise && this._catchHandler) {
       responsePromise = responsePromise.catch((err) => {
         if (process.env.NODE_ENV !== 'production') {
           // Still include URL here as it will be async from the console group
@@ -248,7 +244,7 @@ class Router {
           logger.error(err);
           logger.groupEnd();
         }
-        return this._catchHandler.handle({url, request, event});
+        return this._catchHandler!.handle({url, request, event});
       });
     }
 
@@ -269,10 +265,10 @@ class Router {
    *     otherwise.
    */
   findMatchingRoute({url, request, event}: {
-    url: URL,
-    request: Request,
-    event?: ExtendableEvent
-  }): {route?: Route, params?: HandlerCallbackOptions['params']} {
+    url: URL;
+    request: Request;
+    event?: ExtendableEvent;
+  }): {route?: Route; params?: HandlerCallbackOptions['params']} {
     if (process.env.NODE_ENV !== 'production') {
       assert!.isInstance(url, URL, {
         moduleName: 'workbox-routing',
@@ -291,7 +287,7 @@ class Router {
     const routes = this._routes.get(request.method as HTTPMethod) || [];
     for (const route of routes) {
       let params;
-      let matchResult = route.match({url, request, event});
+      const matchResult = route.match({url, request, event});
       if (matchResult) {
         // See https://github.com/GoogleChrome/workbox/issues/2079
         params = matchResult;
@@ -324,7 +320,7 @@ class Router {
    * Without a default handler, unmatched requests will go against the
    * network as if there were no service worker present.
    *
-   * @param {workbox.routing.Route~handlerCallback} handler A callback
+   * @param {module:workbox-routing~handlerCallback} handler A callback
    * function that returns a Promise resulting in a Response.
    */
   setDefaultHandler(handler: Handler) {
@@ -335,7 +331,7 @@ class Router {
    * If a Route throws an error while handling a request, this `handler`
    * will be called and given a chance to provide a response.
    *
-   * @param {workbox.routing.Route~handlerCallback} handler A callback
+   * @param {module:workbox-routing~handlerCallback} handler A callback
    * function that returns a Promise resulting in a Response.
    */
   setCatchHandler(handler: Handler) {
@@ -345,7 +341,7 @@ class Router {
   /**
    * Registers a route with the router.
    *
-   * @param {workbox.routing.Route} route The route to register.
+   * @param {module:workbox-routing.Route} route The route to register.
    */
   registerRoute(route: Route) {
     if (process.env.NODE_ENV !== 'production') {
@@ -397,7 +393,7 @@ class Router {
   /**
    * Unregisters a route with the router.
    *
-   * @param {workbox.routing.Route} route The route to unregister.
+   * @param {module:workbox-routing.Route} route The route to unregister.
    */
   unregisterRoute(route: Route) {
     if (!this._routes.has(route.method)) {

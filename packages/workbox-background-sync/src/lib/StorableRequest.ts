@@ -40,7 +40,7 @@ export interface RequestData {
  * @private
  */
 class StorableRequest {
-  private _requestData: RequestData;
+  private readonly _requestData: RequestData;
 
   /**
    * Converts a Request object to a plain object that can be structured
@@ -108,8 +108,8 @@ class StorableRequest {
 
     // If the request's mode is `navigate`, convert it to `same-origin` since
     // navigation requests can't be constructed via script.
-    if (requestData.mode === 'navigate') {
-      requestData.mode = 'same-origin';
+    if (requestData['mode'] === 'navigate') {
+      requestData['mode'] = 'same-origin';
     }
 
     this._requestData = requestData;

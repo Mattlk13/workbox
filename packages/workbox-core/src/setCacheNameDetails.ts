@@ -27,9 +27,9 @@ import './_version.js';
  * @param {Object} [details.googleAnalytics] The cache name to use for
  *     `workbox-google-analytics` caching.
  *
- * @alias workbox.core.setCacheNameDetails
+ * @memberof module:workbox-core
  */
-export const setCacheNameDetails = (details: PartialCacheNameDetails) => {
+function setCacheNameDetails(details: PartialCacheNameDetails) {
   if (process.env.NODE_ENV !== 'production') {
     Object.keys(details).forEach((key) => {
       assert!.isType(details[key], 'string', {
@@ -39,27 +39,29 @@ export const setCacheNameDetails = (details: PartialCacheNameDetails) => {
       });
     });
 
-    if ('precache' in details && details.precache!.length === 0) {
+    if ('precache' in details && details['precache']!.length === 0) {
       throw new WorkboxError('invalid-cache-name', {
         cacheNameId: 'precache',
-        value: details.precache,
+        value: details['precache'],
       });
     }
 
-    if ('runtime' in details && details.runtime!.length === 0) {
+    if ('runtime' in details && details['runtime']!.length === 0) {
       throw new WorkboxError('invalid-cache-name', {
         cacheNameId: 'runtime',
-        value: details.runtime,
+        value: details['runtime'],
       });
     }
 
-    if ('googleAnalytics' in details && details.googleAnalytics!.length === 0) {
+    if ('googleAnalytics' in details && details['googleAnalytics'].length === 0) {
       throw new WorkboxError('invalid-cache-name', {
         cacheNameId: 'googleAnalytics',
-        value: details.googleAnalytics,
+        value: details['googleAnalytics'],
       });
     }
   }
 
   cacheNames.updateDetails(details);
-};
+}
+
+export {setCacheNameDetails}
